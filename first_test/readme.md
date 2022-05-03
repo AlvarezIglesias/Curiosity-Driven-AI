@@ -10,4 +10,7 @@ Even with this in mind, the funcion generates rewards in situations where it sho
 The model was trained for 1976000 frames. 
 It looks like it was getting better at the end but this was already 12+ hours training.
 
+<img src="/first_test/media/he_tries.gif" width="250" height="250"/>
+<img src="/first_test/media/rewards.png" width="250" height="250"/>
+
 
