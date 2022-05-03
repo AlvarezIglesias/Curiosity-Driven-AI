@@ -1,0 +1,170 @@
+{
+	"info": 
+	{
+		"party_size": 
+		{
+			"address": 53603,
+			"type": "|i1"
+		},
+		"money": 
+		{
+			"address": 54087,
+			"type": "<d2"
+		},
+		"totalExpPkmn1":
+		{
+			"address": 53625,
+			"type": ">=i4"
+		},
+		"xPosOverworld":
+		{
+			"address": 54114,
+			"type": "|i1"
+		},
+		"yPosOverworld":
+		{
+			"address": 54113,
+			"type": "|i1"
+		},
+		"mapID":
+		{
+			"address": 54109,
+			"type": ">d2"
+		},
+		"currHP":
+		{
+			"address": 53270,
+			"type": "<u2"
+		},
+		"maxHP":
+		{
+			"address": 53284,
+			"type": "<u2"
+		},
+		"enemyMaxHP":
+		{
+			"address": 53237,
+			"type": "<u2"
+		},
+		"enemyCurrHP":
+		{
+			"address": 53223,
+			"type": "<u2"
+		},
+		"audioBank":
+		{
+			"address": 49391,
+			"type": "|u1"
+		},
+		"playerActivePokemonLevel":
+		{
+			"address": 53282,
+			"type": "|u1"
+		},
+		"enemyActivePokemonLevel":
+		{
+			"address": 53235,
+			"type": "|u1"
+		},
+		"hasOaksParcel":
+		{
+			"address": 54797,
+			"type": "|i1"
+		},
+		"badges":
+		{
+			"address": 54102,
+			"type": "|u1"
+		},
+		"playerPkmnATKmod":
+		{
+			"address": 52506,
+			"type": "|u1"
+		},
+		"playerPkmnDEFmod":
+		{
+			"address": 52507,
+			"type": "|u1"
+		},
+		"playerPkmnSPDmod":
+		{
+			"address": 52508,
+			"type": "|u1"
+		},
+		"playerPkmnSPECmod":
+		{
+			"address": 52509,
+			"type": "|u1"
+		},
+		"playerPkmnACCmod":
+		{
+			"address": 52510,
+			"type": "|u1"
+		},
+		"playerPkmnEVAmod":
+		{
+			"address": 52511,
+			"type": "|u1"
+		},
+		"enemyPkmnATKmod":
+		{
+			"address": 52526,
+			"type": "|u1"
+		},
+		"enemyPkmnDEFmod":
+		{
+			"address": 52527,
+			"type": "|u1"
+		},
+		"enemyPkmnSPDmod":
+		{
+			"address": 52528,
+			"type": "|u1"
+		},
+		"enemyPkmnSPECmod":
+		{
+			"address": 52529,
+			"type": "|u1"
+		},
+		"enemyPkmnACCmod":
+		{
+			"address": 52530,
+			"type": "|u1"
+		},
+		"enemyPkmnEVAmod":
+		{
+			"address": 52531,
+			"type": "|u1"
+		},
+		"playerPkmnStatus":
+		{
+			"address": 53272,
+			"type": "|u1"
+		},
+		"enemyPkmnStatus":
+		{
+			"address": 53225,
+			"type": "|u1"
+		},
+		"playerMoveType":
+		{
+			"address": 53205,
+			"type": "|u1"
+		},
+		"enemyMoveType":
+		{
+			"address": 53199,
+			"type": "|u1"
+		},
+		"playerMoveBP":
+		{
+			"address": 53204,
+			"type": "|u1"
+		},
+		"playerMoveACC":
+		{
+			"address": 53206,
+			"type": "|u1"
+		}
+	}
+}
