@@ -10,6 +10,8 @@ Results:
 
 The new model definetly plays better than the previous one. In late episodes, it defeated the first goomba most of the times.
 
+Here it defeats a goomba and does a little dance as celebration:
+
 <img src="/media/defeat_and_dance.gif" width="250" height="250"/>
 
 Sadly, it would get stuck in a lot of obstacles. I think the reward function is not correct. When it gets stuck in the first obstacle, the rewards is not significantly lower than when it completes half the level. I will change it for the next try
