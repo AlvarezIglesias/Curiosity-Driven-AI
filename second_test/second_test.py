@@ -1,27 +1,13 @@
 import retro
-import gym
-import os
-import time
 import retro.enums
 
 
 import numpy as np
-from stable_baselines.common.atari_wrappers import wrap_deepmind
-from stable_baselines.common.vec_env import DummyVecEnv
-from stable_baselines.common.policies import MlpPolicy
-from stable_baselines.common.policies import CnnPolicy
-from stable_baselines.common.policies import MlpLnLstmPolicy
-from stable_baselines.common.policies import CnnLnLstmPolicy
-from stable_baselines import A2C
-from stable_baselines.common.env_checker import check_env
-from stable_baselines.common.cmd_util import make_vec_env
-from stable_baselines.common.policies import FeedForwardPolicy, register_policy
-from stable_baselines.common.evaluation import evaluate_policy
-from stable_baselines.common.vec_env import VecNormalize
 from tensorflow import keras
 from tensorflow.keras import layers
 import tensorflow as tf
 from PIL import Image
+import PIL
 import imagehash
 
 from sortedcontainers import SortedSet
@@ -33,25 +19,21 @@ time.clock = time.time
 
 def create_q_model(num_actions):
     # Network defined by the Deepmind paper
-    inputs = layers.Input(shape=(144, 160, 3))
+    inputs = layers.Input(shape=(144, 160, 1))
 
-    # Convolutions on the frames on the screen
     layer1 = layers.Conv2D(32, 8, strides=4, activation="relu")(inputs)
     layer2 = layers.Conv2D(64, 4, strides=2, activation="relu")(layer1)
     layer3 = layers.Conv2D(64, 3, strides=1, activation="relu")(layer2)
-
     layer4 = layers.Flatten()(layer3)
-
-    layer5 = layers.Dense(256, activation="relu")(layer4)
-    #layer6 = layers.lstm()
-    action = layers.Dense(num_actions, activation="linear")(layer5)
+    layer5 = layers.Dense(32, activation="relu")(layer4)
+    layer6 = layers.Dense(32, activation="relu")(layer5)
+    action = layers.Dense(num_actions, activation="linear")(layer6)
 
     return keras.Model(inputs=inputs, outputs=action)
 
 def main():
     # Configuration paramaters for the whole setup
     tf.enable_eager_execution()
-
     seed = 42
     gamma = 0.99  # Discount factor for past rewards
     epsilon = 1.0  # Epsilon greedy parameter
@@ -66,13 +48,10 @@ def main():
     #
     env = retro.make("MarioBrosLand-GameBoy", inttype=retro.data.Integrations.ALL, obs_type=retro.Observations.IMAGE,
                      use_restricted_actions=retro.Actions.ALL)
-    #unlike in pokemon, you might need to jump and move at the same time
     env = Discretizer(env)
-    # Warp the frames, grey scale, stake four frame and scale to smaller ratio
-    #env = wrap_deepmind(env, frame_stack=True, scale=True)
     env.seed(seed)
 
-    num_actions = 8 #7 in pokemon
+    num_actions = 7 #7 in pokemon
 
     # The first model makes the predictions for Q-values which are used to
     # make a action.
@@ -84,13 +63,14 @@ def main():
 
     # In the Deepmind paper they use RMSProp however then Adam optimizer
     # improves training time
-    optimizer = keras.optimizers.Adam(learning_rate=0.1, clipnorm=1.0)
-    #previous learning rate = 0.00025
+    optimizer = keras.optimizers.Adam(learning_rate=0.001, clipnorm=1.0)
+
     # Experience replay buffers
     action_history = []
     state_history = []
     state_hash_history = SortedSet()
     state_next_history = []
+    state_next_history_stacked = []
     rewards_history = []
     done_history = []
     episode_reward_history = []
@@ -98,12 +78,12 @@ def main():
     episode_count = 0
     frame_count = 0
     # Number of frames to take random action and observe output
-    epsilon_random_frames = 500
+    epsilon_random_frames = 5000
     # Number of frames for exploration
-    epsilon_greedy_frames = 10000.0
+    epsilon_greedy_frames = 100000.0
     # Maximum replay length
     # Note: The Deepmind paper suggests 1000000 however this causes memory issues
-    max_memory_length = 100
+    max_memory_length = 1000
     # Train the model after 4 actions
     update_after_actions = 4
     # How often to update the target network
@@ -111,31 +91,40 @@ def main():
     # Using huber loss for stability
     loss_function = keras.losses.Huber()
 
-    render_every = 1
+    render_every = 10
     should_save = False
     debug_reward = False
+    debug_frame_stack = False
     while True:  # Run until solved
         state = np.array(env.reset())
+        state = state[:,:,0] / 255 # test with only one channel
+        state = np.expand_dims(state, axis=2)
+
+        state_next_history.append(state)#need 4 frames to start
+        state_next_history.append(state)
+        state_next_history.append(state)
+        state_next_history.append(state)
+        state_next_history.append(state)
+
         episode_reward = 0
         state_hash_history = SortedSet()
         state_hash_history.add("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff")
         for timestep in range(1, max_steps_per_episode):
-        #while True:
 
-            if(timestep % render_every == 0): env.render();  # Adding this line would show the attempts
-            # of the agent in a pop up window.
-            #print("frame_count ", frame_count, "reward ", episode_reward)
+            if(timestep % render_every == 0): env.render();
+
             frame_count += 1
+
+            new_stacked_frame = (state_next_history[-1]*1 + state_next_history[-2]*0.75 + state_next_history[-3]*0.5 + state_next_history[-4]*0.25) / 2.5
 
             # Use epsilon-greedy for exploration
             if  frame_count < epsilon_random_frames or epsilon > np.random.rand(1)[0]:
                 # Take random action
                 action = np.random.choice(num_actions)
-                #print("Random action was taken")
             else:
                 # Predict action Q-values
                 # From environment state
-                state_tensor = tf.convert_to_tensor(state)
+                state_tensor = tf.convert_to_tensor(new_stacked_frame)
                 state_tensor = tf.expand_dims(state_tensor, 0)
                 action_probs = model(tf.cast(state_tensor, tf.float32), training=False)
                 # Take best action
@@ -148,13 +137,13 @@ def main():
             # Apply the sampled action in our environment
             state_next, reward, done, _ = env.step(action)
             state_next = np.array(state_next)
+            state_next = state_next[:, :, 0] / 255  # test with only one channel
+            state_next = np.expand_dims(state_next, axis=2)
 
 
 
-            screen = Image.fromarray(state)
+            screen = Image.fromarray(np.squeeze(state_next)*255)
             state_hash = imagehash.whash(screen, hash_size=16)
-            #imagehash.whash()
-
             ii = state_hash_history.bisect_left(str(state_hash))
             closest = state_hash_history[ii]#not really the closest always but anyways
             if closest == str(state_hash):
@@ -164,6 +153,10 @@ def main():
                 state_hash_history.add(str(state_hash))
 
             if debug_reward: print(reward)
+            if debug_frame_stack and frame_count % 1 == 0:
+                debug_frame = Image.fromarray(np.squeeze(new_stacked_frame)*255)
+                debug_frame = debug_frame.convert("L")
+                debug_frame.save("debug_frame_" + str(frame_count) + ".png")
 
             episode_reward += reward
 
@@ -171,19 +164,20 @@ def main():
             action_history.append(action)
             state_history.append(state)
             state_next_history.append(state_next)
+            state_next_history_stacked.append(new_stacked_frame)
             done_history.append(done)
             rewards_history.append(reward)
             state = state_next
 
-            # Update every fourth frame and once batch size is over 32
+            # Update every fourth frame and once batch size is over 16
             if frame_count % update_after_actions == 0 and len(done_history) > batch_size:
                 # Get indices of samples for replay buffers
-                #indices = np.random.choice(range(len(done_history)), size=batch_size)
-                indices = - np.arange(batch_size)
+                indices = np.random.choice(range(len(done_history)), size=batch_size)
+                #indices = - np.arange(batch_size)
 
                 # Using list comprehension to sample from replay buffer
                 state_sample = np.array([state_history[i] for i in indices])
-                state_next_sample = np.array([state_next_history[i] for i in indices])
+                state_next_sample = np.array([state_next_history_stacked[i] for i in indices])
                 rewards_sample = [rewards_history[i] for i in indices]
                 action_sample = [action_history[i] for i in indices]
                 done_sample = tf.convert_to_tensor(
@@ -231,6 +225,7 @@ def main():
                 del rewards_history[:1]
                 del state_history[:1]
                 del state_next_history[:1]
+                del state_next_history_stacked[:1]
                 del action_history[:1]
                 del done_history[:1]
 

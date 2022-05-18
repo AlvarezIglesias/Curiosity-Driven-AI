@@ -11,7 +11,7 @@ class Discretizer(gym.ActionWrapper):
         combos: ordered list of lists of valid button combinations
     """
 
-    def __init__(self, env, combos=[['B'], [None], ['UP'], ['DOWN'], ['LEFT'], ['RIGHT'], ['A'], ['START']]):
+    def __init__(self, env, combos=[['B'], [None], ['UP'], ['DOWN'], ['RIGHT'], ['A'], ['START']]):# ['LEFT'],
         super().__init__(env)
         assert isinstance(env.action_space, gym.spaces.MultiBinary)
         buttons = env.unwrapped.buttons
